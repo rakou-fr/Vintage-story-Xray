@@ -1,0 +1,12 @@
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\OreHighlight.csproj.AssemblyReference.cache
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\OreHighlight.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\OreHighlight.AssemblyInfoInputs.cache
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\OreHighlight.AssemblyInfo.cs
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\OreHighlight.csproj.CoreCompileInputs.cache
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\bin\Debug\net10.0\OreHighlight.deps.json
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\bin\Debug\net10.0\OreHighlight.dll
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\bin\Debug\net10.0\OreHighlight.pdb
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\OreHighlight.dll
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\refint\OreHighlight.dll
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\OreHighlight.pdb
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\ref\OreHighlight.dll

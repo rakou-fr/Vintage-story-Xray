@@ -1,0 +1,5 @@
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net8.0\OreHighlight.csproj.AssemblyReference.cache
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net8.0\OreHighlight.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net8.0\OreHighlight.AssemblyInfoInputs.cache
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net8.0\OreHighlight.AssemblyInfo.cs
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net8.0\OreHighlight.csproj.CoreCompileInputs.cache

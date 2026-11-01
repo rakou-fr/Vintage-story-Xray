@@ -1,0 +1,9 @@
+{
+  "type": "code",
+  "modid": "orehighlight",
+  "name": "Ore Highlight",
+  "version": "1.0.0",
+  "description": "Affiche le contour fil de fer des minerais à travers les blocs.",
+  "authors": ["rakou42"],
+  "side": "client"
+}
