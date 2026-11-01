@@ -10,3 +10,4 @@ C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\OreHighlig
 C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\refint\OreHighlight.dll
 C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\OreHighlight.pdb
 C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\ref\OreHighlight.dll
+C:\Users\balin\Desktop\PROJETS\rakx vs\OreHighlight\obj\Debug\net10.0\OreHighlight.sourcelink.json

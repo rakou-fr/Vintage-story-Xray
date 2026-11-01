@@ -10,27 +10,39 @@ using Cairo;
 
 namespace OreHighlight
 {
-    // On crée une classe universelle pour stocker soit un Bloc, soit une Entité
+    // --- MODIFIÉ : La cible contient maintenant une LISTE de blocs ou d'entités (pour les variants) ---
     public class ScanTarget 
     {
         public bool IsEntity;
-        public Block Block;
-        public EntityProperties Entity;
+        public List<Block> Blocks = new List<Block>();
+        public List<EntityProperties> Entities = new List<EntityProperties>();
         
-        public string CodePath => IsEntity ? Entity.Code.Path : Block.Code.Path;
-        public string Domain => IsEntity ? Entity.Code.Domain : Block.Code.Domain;
-        public string UniqueId => IsEntity ? "e_" + Math.Abs(CodePath.GetHashCode()) : "b_" + Block.Id;
+        // Nom affiché, défini lors de la recherche
+        public string DisplayName { get; set; } 
+
+        // On utilise le premier élément de la liste comme référence
+        public string FirstCodePath => IsEntity ? Entities[0].Code.Path : Blocks[0].Code.Path;
+        public string Domain => IsEntity ? Entities[0].Code.Domain : Blocks[0].Code.Domain;
+        public string UniqueId => IsEntity ? "e_" + Math.Abs(FirstCodePath.GetHashCode()) : "b_" + Blocks[0].Id;
         
-        public string DisplayName 
+        // Récupère tous les objets associés pour faire défiler les images
+        public List<ItemStack> GetItemStacks(ICoreClientAPI capi) 
         {
-            get 
+            List<ItemStack> stacks = new List<ItemStack>();
+            if (!IsEntity) 
             {
-                if (!IsEntity) return Lang.Get($"{Domain}:block-{CodePath}");
-                
-                // Essaye de traduire le nom de l'animal, sinon affiche son code
-                string translated = Lang.Get($"{Domain}:item-creature-{CodePath}");
-                return translated.Contains("item-creature") ? CodePath : translated;
+                foreach(var b in Blocks) stacks.Add(new ItemStack(b));
+            } 
+            else 
+            {
+                foreach(var e in Entities) 
+                {
+                    Item item = capi.World.GetItem(new AssetLocation(e.Code.Domain, e.Code.Path)) 
+                             ?? capi.World.GetItem(new AssetLocation(e.Code.Domain, "creature-" + e.Code.Path));
+                    if (item != null) stacks.Add(new ItemStack(item));
+                }
             }
+            return stacks;
         }
     }
 
@@ -47,6 +59,9 @@ namespace OreHighlight
         private int currentScanRadius = 100;
         private int currentLabelRadius = 16;
         private string currentSearchText = "";
+        
+        private float leftScrollY = 0f;
+        private float rightScrollY = 0f;
 
         public ScannerGui(ICoreClientAPI capi, OreScanner scanner, OreRenderer renderer) : base(capi)
         {
@@ -122,6 +137,8 @@ namespace OreHighlight
             double currentYLeft = 0;
             foreach (ScanTarget target in searchResults)
             {
+                if (selectedTargets.Any(t => t.FirstCodePath == target.FirstCodePath)) continue;
+
                 ElementBounds iconBounds = ElementBounds.Fixed(0, currentYLeft, 30, 30);
                 ElementBounds textBounds = ElementBounds.Fixed(35, currentYLeft, 170, 50);
                 ElementBounds btnBounds = ElementBounds.Fixed(210, currentYLeft + 2, 25, 25);
@@ -129,10 +146,11 @@ namespace OreHighlight
                 leftContentBounds.WithChildren(iconBounds, textBounds, btnBounds);
 
                 var comp = composer;
-                if (!target.IsEntity)
+                List<ItemStack> stacks = target.GetItemStacks(capi);
+                
+                if (stacks.Count > 0)
                 {
-                    ItemStack stack = new ItemStack(target.Block);
-                    comp = comp.AddInteractiveElement(new GuiElementItemStackPreview(capi, iconBounds, leftClipBounds, stack));
+                    comp = comp.AddInteractiveElement(new GuiElementItemStackPreview(capi, iconBounds, leftClipBounds, stacks));
                 }
                 else 
                 {
@@ -141,7 +159,7 @@ namespace OreHighlight
 
                 comp.AddDynamicText(target.DisplayName, CairoFont.WhiteSmallText(), textBounds, "leftTxt_" + target.UniqueId)
                     .AddSmallButton("+", () => {
-                        if (!selectedTargets.Any(t => t.CodePath == target.CodePath)) {
+                        if (!selectedTargets.Any(t => t.FirstCodePath == target.FirstCodePath)) {
                             selectedTargets.Add(target);
                             RebuildDialog();
                         }
@@ -155,6 +173,7 @@ namespace OreHighlight
 
             composer.AddVerticalScrollbar((value) => {
                 leftContentBounds.fixedY = 0 - value;
+                leftScrollY = value;
                 leftContentBounds.CalcWorldBounds();
             }, leftScrollbarBounds, "leftScrollbar");
 
@@ -172,10 +191,11 @@ namespace OreHighlight
                 rightContentBounds.WithChildren(iconBounds, textBounds, btnBounds);
 
                 var comp = composer;
-                if (!target.IsEntity)
+                List<ItemStack> stacks = target.GetItemStacks(capi);
+
+                if (stacks.Count > 0)
                 {
-                    ItemStack stack = new ItemStack(target.Block);
-                    comp = comp.AddInteractiveElement(new GuiElementItemStackPreview(capi, iconBounds, rightClipBounds, stack));
+                    comp = comp.AddInteractiveElement(new GuiElementItemStackPreview(capi, iconBounds, rightClipBounds, stacks));
                 }
                 else 
                 {
@@ -196,14 +216,22 @@ namespace OreHighlight
 
             composer.AddVerticalScrollbar((value) => {
                 rightContentBounds.fixedY = 0 - value;
+                rightScrollY = value; 
                 rightContentBounds.CalcWorldBounds();
             }, rightScrollbarBounds, "rightScrollbar");
 
             composer.AddButton("Scan", OnScanClicked, scanBtnBounds, CairoFont.WhiteMediumText());
             SingleComposer = composer.Compose();
 
-            SingleComposer.GetScrollbar("leftScrollbar").SetHeights((float)leftClipBounds.fixedHeight, (float)leftContentBounds.fixedHeight);
-            SingleComposer.GetScrollbar("rightScrollbar").SetHeights((float)rightClipBounds.fixedHeight, (float)rightContentBounds.fixedHeight);
+            var leftScrollbar = SingleComposer.GetScrollbar("leftScrollbar");
+            leftScrollbar.SetHeights((float)leftClipBounds.fixedHeight, (float)leftContentBounds.fixedHeight);
+            leftScrollbar.CurrentYPosition = leftScrollY;
+            leftContentBounds.fixedY = 0 - leftScrollY;
+
+            var rightScrollbar = SingleComposer.GetScrollbar("rightScrollbar");
+            rightScrollbar.SetHeights((float)rightClipBounds.fixedHeight, (float)rightContentBounds.fixedHeight);
+            rightScrollbar.CurrentYPosition = rightScrollY;
+            rightContentBounds.fixedY = 0 - rightScrollY;
 
             SingleComposer.GetNumberInput("chunkInput").SetValue(currentScanRadius);
             SingleComposer.GetNumberInput("labelRadiusInput").SetValue(currentLabelRadius);
@@ -217,31 +245,50 @@ namespace OreHighlight
 
             searchResults.Clear();
             
-            // 1. Recherche parmi les blocs (minerais, silex au sol, cailloux, branches...)
+            // On utilise un dictionnaire pour regrouper les objets par leur nom traduit
+            Dictionary<string, ScanTarget> groups = new Dictionary<string, ScanTarget>();
+            
+            // 1. Recherche parmi les blocs
             foreach (Block block in capi.World.Blocks)
             {
                 if (block.Code == null || block.Id == 0) continue;
-                string name = Lang.Get($"{block.Code.Domain}:block-{block.Code.Path}").ToLowerInvariant();
+                string name = Lang.Get($"{block.Code.Domain}:block-{block.Code.Path}");
+                string lowerName = name.ToLowerInvariant();
                 
-                if (name.Contains(query) || block.Code.Path.Contains(query))
+                if (lowerName.Contains(query) || block.Code.Path.ToLowerInvariant().Contains(query))
                 {
-                    searchResults.Add(new ScanTarget { IsEntity = false, Block = block });
+                    string groupKey = "b_" + name; // Clé de groupe basée sur le nom exact
+                    if (!groups.ContainsKey(groupKey)) 
+                    {
+                        groups[groupKey] = new ScanTarget { IsEntity = false, DisplayName = name };
+                    }
+                    groups[groupKey].Blocks.Add(block);
                 }
             }
 
-            // 2. Recherche parmi les entités (loups, moutons, monstres...)
+            // 2. Recherche parmi les entités
             foreach (EntityProperties entityType in capi.World.EntityTypes)
             {
                 if (entityType.Code == null) continue;
-                string path = entityType.Code.Path.ToLowerInvariant();
-                string name = Lang.Get($"{entityType.Code.Domain}:item-creature-{entityType.Code.Path}").ToLowerInvariant();
+                string path = entityType.Code.Path;
+                string name = Lang.Get($"{entityType.Code.Domain}:item-creature-{path}");
+                if (name.Contains("item-creature")) name = path; // Secours si pas de traduction
+
+                string lowerName = name.ToLowerInvariant();
                 
-                if (name.Contains(query) || path.Contains(query))
+                if (lowerName.Contains(query) || path.ToLowerInvariant().Contains(query))
                 {
-                    searchResults.Add(new ScanTarget { IsEntity = true, Entity = entityType });
+                    string groupKey = "e_" + name;
+                    if (!groups.ContainsKey(groupKey)) 
+                    {
+                        groups[groupKey] = new ScanTarget { IsEntity = true, DisplayName = name };
+                    }
+                    groups[groupKey].Entities.Add(entityType);
                 }
             }
 
+            searchResults = groups.Values.ToList();
+            leftScrollY = 0f;
             RebuildDialog();
             return true;
         }
@@ -267,14 +314,24 @@ namespace OreHighlight
             Random rand = new Random();
             foreach (ScanTarget target in selectedTargets)
             {
+                // Une couleur par groupe, comme ça tous les variants de silex auront la même couleur !
                 int randomColor = ColorUtil.ToRgba(255, rand.Next(100, 255), rand.Next(100, 255), rand.Next(100, 255));
                 
-                // On préfixe la clé pour que le scanner sache s'il cherche un bloc ou une entité
-                string key = target.IsEntity ? "entity:" + target.CodePath : "block:" + target.CodePath;
-
-                if (!config.Targets.ContainsKey(key)) 
+                if (!target.IsEntity)
                 {
-                    config.Targets.Add(key, randomColor);
+                    foreach (Block b in target.Blocks)
+                    {
+                        string key = "block:" + b.Code.Path;
+                        if (!config.Targets.ContainsKey(key)) config.Targets.Add(key, randomColor);
+                    }
+                }
+                else
+                {
+                    foreach (EntityProperties e in target.Entities)
+                    {
+                        string key = "entity:" + e.Code.Path;
+                        if (!config.Targets.ContainsKey(key)) config.Targets.Add(key, randomColor);
+                    }
                 }
             }
 
@@ -296,23 +353,33 @@ namespace OreHighlight
         }
     }
 
+    // --- MODIFIÉ : Gère maintenant une animation si on lui passe une liste d'objets ---
     public class GuiElementItemStackPreview : GuiElement
     {
-        private ItemSlot dummySlot;
+        private List<ItemSlot> dummySlots = new List<ItemSlot>();
         private ElementBounds clipBounds;
 
-        public GuiElementItemStackPreview(ICoreClientAPI capi, ElementBounds bounds, ElementBounds clipBounds, ItemStack stack) : base(capi, bounds)
+        public GuiElementItemStackPreview(ICoreClientAPI capi, ElementBounds bounds, ElementBounds clipBounds, List<ItemStack> stacks) : base(capi, bounds)
         {
-            this.dummySlot = new DummySlot(stack);
             this.clipBounds = clipBounds;
+            foreach(var stack in stacks) 
+            {
+                this.dummySlots.Add(new DummySlot(stack));
+            }
         }
 
         public override void RenderInteractiveElements(float deltaTime)
         {
+            if (dummySlots.Count == 0) return;
+
             if (clipBounds != null) api.Render.PushScissor(clipBounds);
 
+            // Change d'image toutes les 800 millisecondes
+            int currentIndex = (int)((api.World.ElapsedMilliseconds / 800) % dummySlots.Count);
+            ItemSlot slotToRender = dummySlots[currentIndex];
+
             api.Render.RenderItemstackToGui(
-                dummySlot, 
+                slotToRender, 
                 Bounds.renderX + Bounds.InnerWidth / 2, 
                 Bounds.renderY + Bounds.InnerHeight / 2, 
                 100, 

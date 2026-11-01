@@ -8,7 +8,6 @@ namespace OreHighlight
         private ICoreClientAPI capi;
         private ScannerGui scannerGui;
         
-        // Ajout des instances
         private OreScanner scanner;
         private OreRenderer renderer;
 
@@ -16,31 +15,42 @@ namespace OreHighlight
         {
             this.capi = api;
             
-            // Initialisation
             this.scanner = new OreScanner(api);
             this.renderer = new OreRenderer(api);
             
+            // 1er bouton : Ouvrir l'interface (Touche P)
             capi.Input.RegisterHotKey("scannergui", "Ouvrir l'interface du Scanner", GlKeys.P, HotkeyType.HelpAndOverlays);
             capi.Input.SetHotKeyHandler("scannergui", ToggleGui);
+
+            // 2ème bouton : Activer/Désactiver l'affichage (Touche O par défaut)
+            capi.Input.RegisterHotKey("scannertoggle", "Activer/Désactiver l'affichage du Scanner", GlKeys.O, HotkeyType.HelpAndOverlays);
+            capi.Input.SetHotKeyHandler("scannertoggle", ToggleScannerRenderer);
         }
 
         private bool ToggleGui(KeyCombination comb)
         {
             if (scannerGui == null)
             {
-                // On passe le scanner et le renderer au GUI
                 scannerGui = new ScannerGui(capi, scanner, renderer);
             }
 
             if (scannerGui.IsOpened())
-            {
                 scannerGui.TryClose();
-            }
             else
-            {
                 scannerGui.TryOpen();
-            }
 
+            return true;
+        }
+
+        // Nouvelle méthode pour activer/désactiver visuellement le scanner
+        private bool ToggleScannerRenderer(KeyCombination comb)
+        {
+            if (renderer != null)
+            {
+                renderer.IsActive = !renderer.IsActive; // Inverse l'état (vrai/faux)
+                string etat = renderer.IsActive ? "Activé" : "Désactivé";
+                capi.ShowChatMessage($"Affichage du scanner : {etat}.");
+            }
             return true;
         }
         

@@ -9,7 +9,7 @@ namespace OreHighlight
     public class OreRenderer : IRenderer, IDisposable
     {
         private ICoreClientAPI capi;
-        
+        public bool IsActive = true;
         // Listes pour les Blocs (statiques)
         private List<BlockPos> positions = new List<BlockPos>();
         private List<int> colors = new List<int>();
@@ -68,6 +68,7 @@ namespace OreHighlight
 
         public void OnRenderFrame(float deltaTime, EnumRenderStage stage)
         {
+            if (!IsActive) return;
             if (capi.World.Player?.Entity == null) return;
             if (positions.Count == 0 && entities.Count == 0) return;
 
